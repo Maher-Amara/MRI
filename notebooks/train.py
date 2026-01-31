@@ -19,6 +19,7 @@ import argparse
 from pathlib import Path
 import json
 from datetime import datetime
+import warnings
 
 import numpy as np
 import tensorflow as tf
@@ -28,6 +29,10 @@ from tensorflow.keras.callbacks import (
     EarlyStopping, ModelCheckpoint, ReduceLROnPlateau,
     CSVLogger, TensorBoard
 )
+
+# Suppress HDF5 warnings (we use .keras format now)
+warnings.filterwarnings('ignore', category=UserWarning, message='.*HDF5.*')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TensorFlow info messages
 
 try:
     import matplotlib.pyplot as plt
@@ -219,17 +224,50 @@ class EfficientNetTrainer:
         else:
             raise ValueError(f"Unsupported optimizer: {optimizer}")
         
-        # Compile
+        # Custom metrics for comprehensive evaluation during training
+        # Add precision, recall, and F1-score to monitor during training
+        precision_metric = keras.metrics.Precision(name='precision')
+        recall_metric = keras.metrics.Recall(name='recall')
+        
+        # F1-Score metric (custom implementation)
+        class F1Score(keras.metrics.Metric):
+            def __init__(self, name='f1_score', **kwargs):
+                super().__init__(name=name, **kwargs)
+                self.precision = keras.metrics.Precision()
+                self.recall = keras.metrics.Recall()
+            
+            def update_state(self, y_true, y_pred, sample_weight=None):
+                self.precision.update_state(y_true, y_pred, sample_weight)
+                self.recall.update_state(y_true, y_pred, sample_weight)
+            
+            def result(self):
+                p = self.precision.result()
+                r = self.recall.result()
+                return 2 * ((p * r) / (p + r + keras.backend.epsilon()))
+            
+            def reset_state(self):
+                self.precision.reset_state()
+                self.recall.reset_state()
+        
+        f1_metric = F1Score()
+        
+        # Compile with all metrics
         self.model.compile(
             optimizer=opt,
             loss='categorical_crossentropy',
-            metrics=['accuracy', 'top_k_categorical_accuracy']
+            metrics=[
+                'accuracy',
+                'top_k_categorical_accuracy',
+                precision_metric,
+                recall_metric,
+                f1_metric
+            ]
         )
         
         print(f"✓ Optimizer: {optimizer}")
         print(f"✓ Learning rate: {learning_rate}")
         print(f"✓ Loss: categorical_crossentropy")
-        print(f"✓ Metrics: accuracy, top_k_categorical_accuracy")
+        print(f"✓ Metrics: accuracy, top_k_categorical_accuracy, precision, recall, f1_score")
     
     def train(self, epochs=50, batch_size=32, learning_rate=1e-4, 
               optimizer='adam', patience=10, min_lr=1e-7):
@@ -289,14 +327,15 @@ class EfficientNetTrainer:
         )
         callbacks.append(early_stopping)
         
-        # Model checkpoint
-        checkpoint_path = self.models_dir / 'best_model.h5'
+        # Model checkpoint (use .keras format to avoid HDF5 warning)
+        checkpoint_path = self.models_dir / 'best_model.keras'
         model_checkpoint = ModelCheckpoint(
             filepath=str(checkpoint_path),
             monitor='val_loss',
             save_best_only=True,
             save_weights_only=False,
-            verbose=1
+            verbose=1,
+            save_format='keras'
         )
         callbacks.append(model_checkpoint)
         
@@ -358,17 +397,21 @@ class EfficientNetTrainer:
             raise ValueError("Model not trained. Call train() first.")
         
         if save_path is None:
-            save_path = self.models_dir / 'final_model.h5'
+            # Use .keras format to avoid HDF5 warning
+            save_path = self.models_dir / 'final_model.keras'
         else:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
+            # Convert .h5 to .keras if needed
+            if save_path.suffix == '.h5':
+                save_path = save_path.with_suffix('.keras')
         
         print(f"\n{'='*80}")
         print(f"SAVING MODEL")
         print(f"{'='*80}")
         
-        # Save model
-        self.model.save(str(save_path))
+        # Save model (using .keras format)
+        self.model.save(str(save_path), save_format='keras')
         print(f"✓ Model saved to: {save_path}")
         
         # Save model configuration
@@ -446,21 +489,26 @@ class EfficientNetTrainer:
         axes[0, 1].legend()
         axes[0, 1].grid(alpha=0.3)
         
-        # Top-K accuracy (if available)
-        if 'top_k_categorical_accuracy' in history:
-            axes[1, 0].plot(epochs, history['top_k_categorical_accuracy'], 'b-', 
-                           label='Training Top-K Accuracy', linewidth=2)
-            if 'val_top_k_categorical_accuracy' in history:
-                axes[1, 0].plot(epochs, history['val_top_k_categorical_accuracy'], 'r-', 
-                              label='Validation Top-K Accuracy', linewidth=2)
+        # Precision, Recall, F1-Score curves (evaluation metrics)
+        if 'precision' in history and 'recall' in history and 'f1_score' in history:
+            axes[1, 0].plot(epochs, history['precision'], 'g-', label='Training Precision', linewidth=2)
+            axes[1, 0].plot(epochs, history['recall'], 'orange', label='Training Recall', linewidth=2)
+            axes[1, 0].plot(epochs, history['f1_score'], 'purple', label='Training F1-Score', linewidth=2)
+            
+            if 'val_precision' in history and 'val_recall' in history and 'val_f1_score' in history:
+                axes[1, 0].plot(epochs, history['val_precision'], 'g--', label='Validation Precision', linewidth=2)
+                axes[1, 0].plot(epochs, history['val_recall'], 'orange', linestyle='--', label='Validation Recall', linewidth=2)
+                axes[1, 0].plot(epochs, history['val_f1_score'], 'purple', linestyle='--', label='Validation F1-Score', linewidth=2)
+            
             axes[1, 0].set_xlabel('Epoch', fontsize=12)
-            axes[1, 0].set_ylabel('Top-K Accuracy', fontsize=12)
-            axes[1, 0].set_title('Top-K Categorical Accuracy', fontsize=14, fontweight='bold')
-            axes[1, 0].legend()
+            axes[1, 0].set_ylabel('Score', fontsize=12)
+            axes[1, 0].set_title('Precision, Recall, F1-Score', fontsize=14, fontweight='bold')
+            axes[1, 0].legend(fontsize=9, loc='best')
             axes[1, 0].grid(alpha=0.3)
+            axes[1, 0].set_ylim([0, 1])
         else:
             axes[1, 0].axis('off')
-            axes[1, 0].text(0.5, 0.5, 'Top-K Accuracy\nNot Available', 
+            axes[1, 0].text(0.5, 0.5, 'Precision/Recall/F1\nNot Available', 
                           ha='center', va='center', transform=axes[1, 0].transAxes, fontsize=12)
         
         # Learning rate (if available)

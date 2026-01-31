@@ -185,6 +185,13 @@ No Tumor        ...      ...        ...        ...
 
 ### 2.3 Visualization
 
+The evaluation script generates comprehensive confusion matrix visualizations:
+
+![Confusion Matrix](assets/confusion_matrix_b2_v1.0.png)
+*Confusion matrix showing raw counts and normalized percentages for all classes*
+
+**Features**:
+
 - Heatmap visualization with color coding
 - Normalized confusion matrix (percentages)
 - Raw counts confusion matrix
@@ -247,6 +254,11 @@ No Tumor        ...      ...        ...        ...
 - Imbalanced datasets
 - Focus on positive class performance
 
+**Visualization**:
+
+![Precision-Recall Curves](assets/pr_curves_b2_v1.0.png)
+*Precision-Recall curves for each class showing the precision-recall trade-off*
+
 ### 3.4 Learning Curves
 
 **Plot**:
@@ -298,9 +310,23 @@ No Tumor        ...      ...        ...        ...
 - CPU/GPU utilization
 - Model size (MB/GB)
 
-## 5. Model Comparison
+## 5. Metrics Summary Visualization
 
-### 5.1 Comparison Table
+The evaluation generates a comprehensive metrics summary visualization:
+
+![Metrics Summary](assets/metrics_summary_b2_v1.0.png)
+*Comprehensive metrics summary including overall metrics (accuracy, precision, recall, F1-score, ROC-AUC, Average Precision) and per-class performance (precision, recall, F1-score for each class)*
+
+**Components**:
+
+- Overall metrics bar chart (accuracy, precision, recall, F1-score, ROC-AUC, Average Precision)
+- Per-class precision bar chart
+- Per-class recall bar chart
+- Per-class F1-score bar chart
+
+## 6. Model Comparison
+
+### 6.1 Comparison Table
 
 | Model | Accuracy | Precision | Recall | F1-Score | Training Time | Inference Time |
 |-------|----------|-----------|--------|----------|---------------|----------------|
@@ -333,7 +359,7 @@ No Tumor        ...      ...        ...        ...
 - Analyze image properties
 - Adjust decision threshold if needed
 
-### 6.2 False Negatives Analysis
+### 7.2 False Negatives Analysis
 
 **Questions**:
 
@@ -347,7 +373,7 @@ No Tumor        ...      ...        ...        ...
 - Analyze tumor characteristics
 - Consider data augmentation for rare cases
 
-### 6.3 Confusion Analysis
+### 7.3 Confusion Analysis
 
 **For Multi-Class**:
 
@@ -355,9 +381,9 @@ No Tumor        ...      ...        ...        ...
 - Are there similar-looking tumor types?
 - Can we improve feature extraction?
 
-## 7. Layer Visualization
+## 8. Layer Visualization
 
-### 7.1 Feature Maps
+### 8.1 Feature Maps
 
 **Visualization**:
 
@@ -393,9 +419,9 @@ No Tumor        ...      ...        ...        ...
 - Are there specialized feature detectors?
 - How do activations differ between classes?
 
-## 8. Cross-Validation
+## 9. Cross-Validation
 
-### 8.1 K-Fold Cross-Validation
+### 9.1 K-Fold Cross-Validation
 
 **Method**:
 
@@ -410,16 +436,16 @@ No Tumor        ...      ...        ...        ...
 - Better use of limited data
 - Reduces variance in evaluation
 
-### 8.2 Stratified K-Fold
+### 9.2 Stratified K-Fold
 
 **When to Use**:
 
 - Imbalanced datasets
 - Maintains class distribution in each fold
 
-## 9. Evaluation Report Template
+## 10. Evaluation Report Template
 
-### 9.1 Report Structure
+### 10.1 Report Structure
 
 1. **Executive Summary**
    - Overall performance
@@ -452,7 +478,7 @@ No Tumor        ...      ...        ...        ...
    - Recommendations
    - Future improvements
 
-## 10. Evaluation Checklist
+## 11. Evaluation Checklist
 
 - [ ] Calculate all primary metrics (Accuracy, Precision, Recall, F1)
 - [ ] Generate confusion matrix

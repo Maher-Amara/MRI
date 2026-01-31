@@ -354,7 +354,25 @@ The system is evaluated using:
 - **Recall**: True positives / (True positives + False negatives)
 - **F1-Score**: Harmonic mean of precision and recall
 - **Confusion Matrix**: Detailed classification breakdown
+- **ROC-AUC**: Area under ROC curve (model's ability to distinguish classes)
+- **Average Precision**: Area under Precision-Recall curve
 - **Runtime Performance**: Training and inference times
+
+### Evaluation Visualizations
+
+The evaluation generates comprehensive visualizations:
+
+![Confusion Matrix](docs/assets/confusion_matrix_b2_v1.0.png)
+*Confusion matrix showing classification performance*
+
+![ROC Curves](docs/assets/roc_curves_b2_v1.0.png)
+*ROC curves for multi-class classification*
+
+![Precision-Recall Curves](docs/assets/pr_curves_b2_v1.0.png)
+*Precision-Recall curves showing precision-recall trade-off*
+
+![Metrics Summary](docs/assets/metrics_summary_b2_v1.0.png)
+*Comprehensive metrics summary with overall and per-class metrics*
 
 See [docs/evaluation.md](docs/evaluation.md) for detailed evaluation methodology.
 

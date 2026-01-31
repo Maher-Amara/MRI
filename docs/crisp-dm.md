@@ -423,10 +423,24 @@ This project follows the **CRISP-DM (Cross-Industry Standard Process for Data Mi
 
 1. Evaluate on test set (unseen data)
 2. Generate confusion matrix
-3. Calculate all metrics
+3. Calculate all metrics (accuracy, precision, recall, F1-score, ROC-AUC)
 4. Analyze per-class performance
 5. Visualize results
 6. Compare with baseline models
+
+**Visualizations**:
+
+![Confusion Matrix](assets/confusion_matrix_b2_v1.0.png)
+*Confusion matrix showing classification performance (raw counts and normalized percentages)*
+
+![ROC Curves](assets/roc_curves_b2_v1.0.png)
+*ROC curves for each class showing model's ability to distinguish between classes*
+
+![Precision-Recall Curves](assets/pr_curves_b2_v1.0.png)
+*Precision-Recall curves showing the trade-off between precision and recall*
+
+![Metrics Summary](assets/metrics_summary_b2_v1.0.png)
+*Comprehensive metrics summary including overall and per-class performance*
 
 ### 5.3 Model Interpretation
 
