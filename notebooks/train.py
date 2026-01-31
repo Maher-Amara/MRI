@@ -257,7 +257,6 @@ class EfficientNetTrainer:
             loss='categorical_crossentropy',
             metrics=[
                 'accuracy',
-                'top_k_categorical_accuracy',
                 precision_metric,
                 recall_metric,
                 f1_metric
@@ -267,7 +266,7 @@ class EfficientNetTrainer:
         print(f"✓ Optimizer: {optimizer}")
         print(f"✓ Learning rate: {learning_rate}")
         print(f"✓ Loss: categorical_crossentropy")
-        print(f"✓ Metrics: accuracy, top_k_categorical_accuracy, precision, recall, f1_score")
+        print(f"✓ Metrics: accuracy, precision, recall, f1_score")
     
     def train(self, epochs=50, batch_size=32, learning_rate=1e-4, 
               optimizer='adam', patience=10, min_lr=1e-7):
