@@ -334,8 +334,7 @@ class EfficientNetTrainer:
             monitor='val_loss',
             save_best_only=True,
             save_weights_only=False,
-            verbose=1,
-            save_format='keras'
+            verbose=1
         )
         callbacks.append(model_checkpoint)
         
@@ -410,8 +409,8 @@ class EfficientNetTrainer:
         print(f"SAVING MODEL")
         print(f"{'='*80}")
         
-        # Save model (using .keras format)
-        self.model.save(str(save_path), save_format='keras')
+        # Save model (using .keras format - format determined by file extension)
+        self.model.save(str(save_path))
         print(f"✓ Model saved to: {save_path}")
         
         # Save model configuration
