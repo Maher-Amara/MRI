@@ -61,35 +61,67 @@ class ModelEvaluator:
             model_variant (str): EfficientNet variant ('b2', 'b3', or 'b4')
             dataset_path (str): Path to dataset directory
         """
-        self.model_path = Path(model_path)
+        # Resolve model path relative to notebooks directory
+        model_path_obj = Path(model_path)
+        if not model_path_obj.is_absolute():
+            # If relative, try resolving from notebooks directory first
+            notebooks_dir = Path(__file__).parent
+            resolved_path = (notebooks_dir / model_path).resolve()
+            if not resolved_path.exists():
+                # Try with ../ prefix (relative to notebooks)
+                resolved_path = (notebooks_dir.parent / model_path).resolve()
+            self.model_path = resolved_path
+        else:
+            self.model_path = model_path_obj
+        
         self.model_variant = model_variant.lower()
         self.dataset_path = Path(dataset_path)
         
-        if not self.model_path.exists():
-            raise FileNotFoundError(f"Model file not found: {self.model_path}")
-        
-        # Load model
+        # Load model - try .keras first, then .h5
         print(f"\n{'='*80}")
         print(f"LOADING MODEL")
         print(f"{'='*80}")
         print(f"Model path: {self.model_path}")
         
-        # Try loading as .keras first, then .h5
-        if self.model_path.suffix == '.keras':
-            self.model = keras.models.load_model(str(self.model_path))
-        elif self.model_path.suffix == '.h5':
-            # Also support .h5 for backward compatibility
-            self.model = keras.models.load_model(str(self.model_path))
-        else:
-            # Try both formats
-            keras_path = self.model_path.with_suffix('.keras')
-            h5_path = self.model_path.with_suffix('.h5')
-            if keras_path.exists():
-                self.model = keras.models.load_model(str(keras_path))
-            elif h5_path.exists():
-                self.model = keras.models.load_model(str(h5_path))
+        # Determine which file exists
+        model_file = None
+        if self.model_path.suffix in ['.keras', '.h5']:
+            # User specified exact file
+            if self.model_path.exists():
+                model_file = self.model_path
             else:
                 raise FileNotFoundError(f"Model file not found: {self.model_path}")
+        else:
+            # Try both formats (prefer .keras)
+            keras_path = self.model_path.with_suffix('.keras')
+            h5_path = self.model_path.with_suffix('.h5')
+            
+            if keras_path.exists():
+                model_file = keras_path
+            elif h5_path.exists():
+                model_file = h5_path
+            else:
+                # Try as directory and look for best_model.keras or best_model.h5
+                if self.model_path.is_dir():
+                    keras_path = self.model_path / 'best_model.keras'
+                    h5_path = self.model_path / 'best_model.h5'
+                    if keras_path.exists():
+                        model_file = keras_path
+                    elif h5_path.exists():
+                        model_file = h5_path
+                
+                if model_file is None:
+                    raise FileNotFoundError(
+                        f"Model file not found. Tried:\n"
+                        f"  - {keras_path}\n"
+                        f"  - {h5_path}\n"
+                        f"  - {self.model_path}/best_model.keras\n"
+                        f"  - {self.model_path}/best_model.h5"
+                    )
+        
+        # Load the model
+        self.model = keras.models.load_model(str(model_file))
+        self.model_path = model_file  # Update to actual file used
         
         print(f"✓ Model loaded successfully")
         
