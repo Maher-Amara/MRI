@@ -1,0 +1,5 @@
+dataset/
+!dataset\.gitkeep
+notebooks/.venv/
+efficientnet/
+__pycache__/

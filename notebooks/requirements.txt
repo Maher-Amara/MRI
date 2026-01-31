@@ -1,0 +1,32 @@
+# Brain Tumor Detection Project - Requirements
+# Install with: pip install -r requirements.txt
+
+# Core Data Science Libraries
+numpy>=1.21.0
+pandas>=1.3.0
+
+# Image Processing
+Pillow>=8.3.0
+
+# Visualization
+matplotlib>=3.4.0
+seaborn>=0.11.0
+
+# Deep Learning Framework - TensorFlow/Keras (for EfficientNet)
+tensorflow>=2.8.0
+keras>=2.8.0
+
+# EfficientNet Implementation
+# Option 1: TensorFlow/Keras built-in EfficientNet (recommended)
+# EfficientNet is included in TensorFlow 2.6+ via keras.applications
+
+# Option 2: Standalone EfficientNet package (if needed)
+# efficientnet>=1.1.1
+
+# Additional Utilities
+scikit-learn>=1.0.0
+scipy>=1.7.0
+
+# Model versioning and experiment tracking (optional)
+# tensorboard>=2.8.0  # For training visualization
+# mlflow>=1.20.0      # For experiment tracking (optional)

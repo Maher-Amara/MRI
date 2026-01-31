@@ -1,0 +1,53 @@
+================================================================================
+BRAIN TUMOR DETECTION - DATA UNDERSTANDING REPORT
+Phase 2 of CRISP-DM Methodology
+================================================================================
+
+1. DATASET OVERVIEW
+--------------------------------------------------------------------------------
+Dataset Path: C:\Users\maher\OneDrive\Desktop\MRI\notebooks\..\dataset
+Training Path: C:\Users\maher\OneDrive\Desktop\MRI\notebooks\..\dataset\Training
+Testing Path: C:\Users\maher\OneDrive\Desktop\MRI\notebooks\..\dataset\Testing
+
+2. IMAGE COUNTS
+--------------------------------------------------------------------------------
+Class                     Training     Testing      Total       
+--------------------------------------------------------------------------------
+glioma_tumor              826          100          926         
+meningioma_tumor          822          115          937         
+no_tumor                  395          105          500         
+pituitary_tumor           827          74           901         
+--------------------------------------------------------------------------------
+TOTAL                     2870         394          3264        
+
+3. CLASS DISTRIBUTION
+--------------------------------------------------------------------------------
+glioma_tumor             :  926 (28.37%)
+meningioma_tumor         :  937 (28.71%)
+no_tumor                 :  500 (15.32%)
+pituitary_tumor          :  901 (27.60%)
+
+4. IMAGE PROPERTIES
+--------------------------------------------------------------------------------
+Width  - Min: 174, Max: 1375, Mean: 467.1, Std: 132.8
+Height - Min: 167, Max: 1446, Mean: 469.8, Std: 124.7
+
+5. FILE SIZES
+--------------------------------------------------------------------------------
+Min: 0.005 MB
+Max: 0.270 MB
+Mean: 0.027 MB
+Median: 0.025 MB
+Total: 88.77 MB (0.09 GB)
+
+6. DATA QUALITY ASSESSMENT
+--------------------------------------------------------------------------------
+Corrupted Images: 0
+Class Imbalance Ratio: 1.87
+
+7. RECOMMENDATIONS
+--------------------------------------------------------------------------------
+- Standardize image dimensions during preprocessing
+- Consider data augmentation to handle class imbalance if present
+- Split training data into train/validation sets (80/20 or 70/30)
+- Normalize pixel values to [0, 1] or [-1, 1] range
