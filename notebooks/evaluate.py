@@ -56,8 +56,10 @@ class ModelEvaluator:
         """
         Initialize the model evaluator.
         
+        Works with models from both train.py and train_improved.py.
+        
         Args:
-            model_path (str): Path to trained model file (.keras or .h5)
+            model_path (str): Path to trained model file (.keras or .h5) or model directory
             model_variant (str): EfficientNet variant ('b2', 'b3', or 'b4')
             dataset_path (str): Path to dataset directory
         """
@@ -84,6 +86,7 @@ class ModelEvaluator:
         print(f"Model path: {self.model_path}")
         
         # Determine which file exists
+        # Works with both train.py (v1.0) and train_improved.py (v2.0) models
         model_file = None
         if self.model_path.suffix in ['.keras', '.h5']:
             # User specified exact file
@@ -101,22 +104,28 @@ class ModelEvaluator:
             elif h5_path.exists():
                 model_file = h5_path
             else:
-                # Try as directory and look for best_model.keras or best_model.h5
+                # Try as directory and look for best_model.keras, best_model.h5, or final_model.keras
                 if self.model_path.is_dir():
+                    # Try best_model first (from both scripts)
                     keras_path = self.model_path / 'best_model.keras'
                     h5_path = self.model_path / 'best_model.h5'
+                    final_keras_path = self.model_path / 'final_model.keras'
+                    
                     if keras_path.exists():
                         model_file = keras_path
                     elif h5_path.exists():
                         model_file = h5_path
+                    elif final_keras_path.exists():
+                        model_file = final_keras_path
                 
                 if model_file is None:
                     raise FileNotFoundError(
                         f"Model file not found. Tried:\n"
-                        f"  - {keras_path}\n"
-                        f"  - {h5_path}\n"
+                        f"  - {self.model_path.with_suffix('.keras')}\n"
+                        f"  - {self.model_path.with_suffix('.h5')}\n"
                         f"  - {self.model_path}/best_model.keras\n"
-                        f"  - {self.model_path}/best_model.h5"
+                        f"  - {self.model_path}/best_model.h5\n"
+                        f"  - {self.model_path}/final_model.keras"
                     )
         
         # Load the model
@@ -126,18 +135,33 @@ class ModelEvaluator:
         print(f"✓ Model loaded successfully")
         
         # Get model configuration
+        # Works with both train.py and train_improved.py configs
         model_dir = self.model_path.parent
         config_path = model_dir / 'model_config.json'
         if config_path.exists():
             with open(config_path, 'r') as f:
                 self.config = json.load(f)
             self.model_variant = self.config.get('model_variant', model_variant)
+            # Both scripts use 'version' in config
             self.version = self.config.get('version', 'v1.0')
             self.class_names = self.config.get('class_names', [])
             self.class_indices = self.config.get('class_indices', {})
+            
+            # Detect which training script was used based on config
+            # train_improved.py saves different structure, but both have version
+            if self.version.startswith('v2'):
+                print(f"✓ Detected model from train_improved.py (version {self.version})")
+            else:
+                print(f"✓ Detected model from train.py (version {self.version})")
         else:
             self.config = {}
-            self.version = 'v1.0'
+            # Try to infer version from path
+            if 'v2' in str(model_dir):
+                self.version = 'v2.0'
+                print(f"⚠ No config found, assuming version v2.0 from path")
+            else:
+                self.version = 'v1.0'
+                print(f"⚠ No config found, assuming version v1.0")
             self.class_names = []
             self.class_indices = {}
         
@@ -539,10 +563,21 @@ class ModelEvaluator:
 
 
 def main():
-    """Main evaluation function."""
-    parser = argparse.ArgumentParser(description='Evaluate EfficientNet model for Brain Tumor Detection')
+    """Main evaluation function.
+    
+    Works with models from both train.py and train_improved.py.
+    Automatically detects model version and configuration.
+    """
+    parser = argparse.ArgumentParser(
+        description='Evaluate EfficientNet model for Brain Tumor Detection\n'
+                    'Compatible with models from both train.py and train_improved.py',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument('--model-path', type=str, required=True,
-                       help='Path to trained model file (.keras or .h5)')
+                       help='Path to trained model file (.keras or .h5) or model directory\n'
+                            'Examples:\n'
+                            '  - models/efficientnet/v1.0/efficientnet_b2/best_model.keras (train.py)\n'
+                            '  - models/efficientnet/v2.0/efficientnet_b2/best_model.keras (train_improved.py)')
     parser.add_argument('--model-variant', type=str, default='b2', choices=['b2', 'b3', 'b4'],
                        help='EfficientNet variant (default: b2, auto-detected from config if available)')
     parser.add_argument('--dataset', type=str, default='../dataset',

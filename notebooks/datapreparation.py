@@ -58,7 +58,8 @@ class DataPreparation:
 
     def __init__(self, dataset_path='../dataset', model_variant='b2', 
                  merged_data_path=None, create_splits=True,
-                 train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+                 train_ratio=0.7, val_ratio=0.15, test_ratio=0.15,
+                 filter_low_quality=True):
         """
         Initialize the DataPreparation class.
 
@@ -70,6 +71,7 @@ class DataPreparation:
             train_ratio (float): Proportion for training set (default: 0.7)
             val_ratio (float): Proportion for validation set (default: 0.15)
             test_ratio (float): Proportion for test set (default: 0.15)
+            filter_low_quality (bool): Filter low-resolution images before merging (default: True)
         """
         self.dataset_path = Path(dataset_path)
         self.training_path = self.dataset_path / 'Training'
@@ -84,6 +86,7 @@ class DataPreparation:
         self.val_ratio = val_ratio
         self.test_ratio = test_ratio
         self.create_splits = create_splits
+        self.filter_low_quality = filter_low_quality
 
         # Get input size for the model variant
         if self.model_variant not in self.EFFICIENTNET_SIZES:
@@ -170,6 +173,39 @@ class DataPreparation:
 
         return img_padded.numpy()
     
+    def filter_low_quality_images(self, image_files, min_resolution=None):
+        """
+        Filter out low-quality images (low resolution or corrupted).
+        
+        Args:
+            image_files: List of image file paths to check
+            min_resolution: Minimum resolution (default: model input size)
+        
+        Returns:
+            Tuple of (filtered_image_files, removed_count)
+        """
+        if min_resolution is None:
+            min_resolution = self.input_size
+        
+        filtered_files = []
+        removed_count = 0
+        
+        for img_file in image_files:
+            try:
+                with Image.open(img_file) as img:
+                    width, height = img.size
+                    min_dim = min(width, height)
+                    
+                    if min_dim >= min_resolution:
+                        filtered_files.append(img_file)
+                    else:
+                        removed_count += 1
+            except Exception:
+                # Corrupted image
+                removed_count += 1
+        
+        return filtered_files, removed_count
+    
     def merge_datasets(self, force_merge=False):
         """
         Merge Training and Testing folders into a unified dataset.
@@ -190,6 +226,13 @@ class DataPreparation:
             print("  Use force_merge=True to overwrite")
             return self.merged_data_path
         
+        # Filter low-quality images if enabled
+        if self.filter_low_quality:
+            print(f"\n{'='*80}")
+            print(f"FILTERING LOW-QUALITY IMAGES (Before Merging)")
+            print(f"{'='*80}")
+            print(f"Minimum resolution: {self.input_size}×{self.input_size}")
+        
         # Create merged directory
         self.merged_data_path.mkdir(parents=True, exist_ok=True)
         
@@ -198,6 +241,8 @@ class DataPreparation:
         
         # Merge images from both Training and Testing
         class_counts = defaultdict(int)
+        total_checked = 0
+        total_removed = 0
         
         for split_name, split_path in [('Training', self.training_path), ('Testing', self.testing_path)]:
             if not split_path.exists():
@@ -214,9 +259,17 @@ class DataPreparation:
                 merged_class_path = self.merged_data_path / class_name
                 merged_class_path.mkdir(exist_ok=True)
                 
-                # Copy all images
+                # Get all images
                 image_files = list(class_path.glob('*.jpg')) + list(class_path.glob('*.jpeg')) + list(class_path.glob('*.png'))
+                total_checked += len(image_files)
                 
+                # Filter low-quality images if enabled
+                if self.filter_low_quality:
+                    filtered_files, removed = self.filter_low_quality_images(image_files, self.input_size)
+                    total_removed += removed
+                    image_files = filtered_files
+                
+                # Copy filtered images
                 for img_file in image_files:
                     # Create unique filename to avoid conflicts
                     new_name = f"{split_name.lower()}_{img_file.name}"
@@ -224,7 +277,16 @@ class DataPreparation:
                     shutil.copy2(img_file, dest_path)
                     class_counts[class_name] += 1
                 
-                print(f"  {class_name}: {len(image_files)} images copied")
+                if self.filter_low_quality:
+                    print(f"  {class_name}: {len(image_files)} images copied (filtered from {len(image_files) + removed})")
+                else:
+                    print(f"  {class_name}: {len(image_files)} images copied")
+        
+        if self.filter_low_quality:
+            print(f"\nFiltering Summary:")
+            print(f"  Checked: {total_checked} images")
+            print(f"  Removed: {total_removed} low-quality/corrupted images")
+            print(f"  Kept: {total_checked - total_removed} images")
         
         print("\n" + "=" * 80)
         print("MERGE SUMMARY")

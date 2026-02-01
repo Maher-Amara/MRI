@@ -3,3 +3,4 @@ dataset/
 notebooks/.venv/
 efficientnet/
 __pycache__/
+.venv/

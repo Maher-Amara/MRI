@@ -10,7 +10,7 @@ This script:
 5. Evaluates and saves training history
 
 Usage:
-    python main.py --model b2 --version v1.0 --epochs 50
+    python train.py --model b2 --version v1.0 --epochs 50
 """
 
 import os
